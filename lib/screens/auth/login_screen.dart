@@ -26,14 +26,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
-    final auth = context.read<AuthProvider>();
-    await auth.login(_emailCtrl.text.trim(), _passwordCtrl.text);
+    await context.read<AuthProvider>().login(_emailCtrl.text.trim(), _passwordCtrl.text);
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-
     return Scaffold(
       backgroundColor: AppTheme.backgroundGreen,
       body: SafeArea(
@@ -43,7 +41,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo
                 Container(
                   width: 88,
                   height: 88,
@@ -57,8 +54,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Text('EcoMap', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.darkGreen)),
                 const Text('Smart Waste Management', style: TextStyle(color: Colors.grey, fontSize: 14)),
                 const SizedBox(height: 40),
-
-                // Form card
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
@@ -72,10 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextFormField(
                             controller: _emailCtrl,
                             keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(
-                              labelText: 'Email',
-                              prefixIcon: Icon(Icons.email_outlined),
-                            ),
+                            decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
                             validator: (v) => v == null || !v.contains('@') ? 'Enter a valid email' : null,
                           ),
                           const SizedBox(height: 16),
@@ -109,24 +101,23 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-
-                // Test accounts hint
                 const SizedBox(height: 20),
-                Card(
-                  color: AppTheme.accentGreen.withOpacity(0.2),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text('Test accounts:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                        SizedBox(height: 4),
-                        Text('admin@ecomap.com  →  Admin', style: TextStyle(fontSize: 12)),
-                        Text('driver@ecomap.com  →  Driver', style: TextStyle(fontSize: 12)),
-                        Text('any other email  →  Community', style: TextStyle(fontSize: 12)),
-                        Text('(any password with 6+ chars)', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                      ],
-                    ),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentGreen.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Test accounts:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      SizedBox(height: 4),
+                      Text('admin@ecomap.com  →  Admin', style: TextStyle(fontSize: 12)),
+                      Text('driver@ecomap.com  →  Driver', style: TextStyle(fontSize: 12)),
+                      Text('any other email  →  Community', style: TextStyle(fontSize: 12)),
+                      Text('(any password 6+ chars)', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                    ],
                   ),
                 ),
               ],

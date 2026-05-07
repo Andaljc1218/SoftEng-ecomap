@@ -42,8 +42,10 @@ class AdminShell extends StatelessWidget {
                     child: Icon(Icons.admin_panel_settings, color: AppTheme.primaryGreen, size: 28),
                   ),
                   const SizedBox(height: 8),
-                  Text(auth.currentUser?.name ?? 'Admin', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                  Text(auth.currentUser?.email ?? '', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                  Text(auth.currentUser?.name ?? 'Admin',
+                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(auth.currentUser?.email ?? '',
+                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
                 ],
               ),
             ),
@@ -57,9 +59,7 @@ class AdminShell extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text('Logout', style: TextStyle(color: Colors.red)),
-              onTap: () {
-                context.read<AuthProvider>().logout();
-              },
+              onTap: () => context.read<AuthProvider>().logout(),
             ),
           ],
         ),

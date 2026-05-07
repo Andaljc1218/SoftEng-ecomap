@@ -1,24 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'core/theme/app_theme.dart';
+import 'core/router/app_router.dart';
+import 'providers/auth_provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const EcoMapApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class EcoMapApp extends StatelessWidget {
+  const EcoMapApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return ChangeNotifierProvider(
+      create: (_) => AuthProvider(),
+      child: const _RouterWrapper(),
+    );
+  }
+}
+
+class _RouterWrapper extends StatefulWidget {
+  const _RouterWrapper();
+
+  @override
+  State<_RouterWrapper> createState() => _RouterWrapperState();
+}
+
+class _RouterWrapperState extends State<_RouterWrapper> {
+  late final _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = createRouter(context.read<AuthProvider>());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
       title: 'EcoMap',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2E7D32)),
-        useMaterial3: true,
-      ),
-      home: const Scaffold(
-        body: Center(child: Text('EcoMap is starting...')),
-      ),
+      theme: AppTheme.theme,
+      routerConfig: _router,
     );
   }
 }

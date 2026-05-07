@@ -42,7 +42,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     return Scaffold(
-      backgroundColor: AppTheme.backgroundGreen,
+      backgroundColor: EcoColors.backgroundGreen,
       appBar: AppBar(
         title: const Text('Create Account'),
         leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => context.go('/login')),
@@ -119,7 +119,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       groupValue: _selectedRole,
       title: Text(label),
       onChanged: (v) => setState(() => _selectedRole = v!),
-      activeColor: AppTheme.primaryGreen,
+      activeColor: EcoColors.primaryGreen,
       contentPadding: EdgeInsets.zero,
     );
   }

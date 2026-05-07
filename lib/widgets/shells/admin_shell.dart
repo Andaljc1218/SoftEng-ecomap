@@ -31,7 +31,7 @@ class AdminShell extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: const BoxDecoration(color: AppTheme.primaryGreen),
+              decoration: const BoxDecoration(color: EcoColors.primaryGreen),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -39,7 +39,7 @@ class AdminShell extends StatelessWidget {
                   const CircleAvatar(
                     radius: 28,
                     backgroundColor: Colors.white,
-                    child: Icon(Icons.admin_panel_settings, color: AppTheme.primaryGreen, size: 28),
+                    child: Icon(Icons.admin_panel_settings, color: EcoColors.primaryGreen, size: 28),
                   ),
                   const SizedBox(height: 8),
                   Text(auth.currentUser?.name ?? 'Admin',
@@ -69,10 +69,10 @@ class AdminShell extends StatelessWidget {
 
   Widget _tile(BuildContext context, IconData icon, String label, String route, bool selected) {
     return ListTile(
-      leading: Icon(icon, color: selected ? AppTheme.primaryGreen : null),
+      leading: Icon(icon, color: selected ? EcoColors.primaryGreen : null),
       title: Text(label, style: TextStyle(fontWeight: selected ? FontWeight.bold : FontWeight.normal)),
       selected: selected,
-      selectedTileColor: AppTheme.backgroundGreen,
+      selectedTileColor: EcoColors.backgroundGreen,
       onTap: () {
         Navigator.pop(context);
         context.go(route);

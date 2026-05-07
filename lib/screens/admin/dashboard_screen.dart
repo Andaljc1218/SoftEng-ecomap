@@ -81,7 +81,7 @@ class _ManageTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
         child: ListTile(
-          leading: Icon(icon, color: AppTheme.primaryGreen),
+          leading: Icon(icon, color: EcoColors.primaryGreen),
           title: Text(label),
           trailing: const Icon(Icons.chevron_right),
           onTap: onTap,

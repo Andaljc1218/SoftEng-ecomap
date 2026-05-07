@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     return Scaffold(
-      backgroundColor: AppTheme.backgroundGreen,
+      backgroundColor: EcoColors.backgroundGreen,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -45,13 +45,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: 88,
                   height: 88,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryGreen,
+                    color: EcoColors.primaryGreen,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Icon(Icons.eco, color: Colors.white, size: 48),
                 ),
                 const SizedBox(height: 16),
-                const Text('EcoMap', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.darkGreen)),
+                const Text('EcoMap', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: EcoColors.darkGreen)),
                 const Text('Smart Waste Management', style: TextStyle(color: Colors.grey, fontSize: 14)),
                 const SizedBox(height: 40),
                 Card(
@@ -105,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppTheme.accentGreen.withValues(alpha: 0.2),
+                    color: EcoColors.accentGreen.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Column(

@@ -9,7 +9,7 @@ class ScheduleScreen extends StatelessWidget {
         appBar: AppBar(title: const Text('Pickup Schedule')),
         body: const Center(
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(Icons.calendar_today, size: 64, color: AppTheme.primaryGreen),
+            Icon(Icons.calendar_today, size: 64, color: EcoColors.primaryGreen),
             SizedBox(height: 16),
             Text('Schedule', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             SizedBox(height: 8),

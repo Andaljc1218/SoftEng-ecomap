@@ -8,7 +8,7 @@ class ManageUsersScreen extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: const Text('Manage Users')),
         body: const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(Icons.people, size: 64, color: AppTheme.primaryGreen),
+          Icon(Icons.people, size: 64, color: EcoColors.primaryGreen),
           SizedBox(height: 16),
           Text('User Management', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           SizedBox(height: 8),

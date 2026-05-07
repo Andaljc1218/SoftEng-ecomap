@@ -9,7 +9,7 @@ class AddScheduleScreen extends StatelessWidget {
         appBar: AppBar(title: const Text('Add Schedule')),
         body: const Center(
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(Icons.add_circle_outline, size: 64, color: AppTheme.primaryGreen),
+            Icon(Icons.add_circle_outline, size: 64, color: EcoColors.primaryGreen),
             SizedBox(height: 16),
             Text('Add Pickup Schedule', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             SizedBox(height: 8),
@@ -17,4 +17,4 @@ class AddScheduleScreen extends StatelessWidget {
           ]),
         ),
       );
-}
+} 

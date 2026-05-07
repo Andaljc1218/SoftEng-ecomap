@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
@@ -28,7 +29,7 @@ class _RouterWrapper extends StatefulWidget {
 }
 
 class _RouterWrapperState extends State<_RouterWrapper> {
-  late final _router;
+  late final GoRouter _router;
 
   @override
   void initState() {
@@ -41,7 +42,7 @@ class _RouterWrapperState extends State<_RouterWrapper> {
     return MaterialApp.router(
       title: 'EcoMap',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.theme,
+      theme: EcoThemeData.theme,
       routerConfig: _router,
     );
   }

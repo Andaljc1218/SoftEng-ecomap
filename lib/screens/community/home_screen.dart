@@ -24,7 +24,7 @@ class HomeScreen extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [AppTheme.primaryGreen, AppTheme.lightGreen]),
+                gradient: const LinearGradient(colors: [EcoColors.primaryGreen, EcoColors.lightGreen]),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(

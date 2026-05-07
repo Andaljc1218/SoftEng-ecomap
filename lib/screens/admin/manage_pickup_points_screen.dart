@@ -8,7 +8,7 @@ class ManagePickupPointsScreen extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: const Text('Manage Pickup Points')),
         body: const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(Icons.location_on, size: 64, color: AppTheme.primaryGreen),
+          Icon(Icons.location_on, size: 64, color: EcoColors.primaryGreen),
           SizedBox(height: 16),
           Text('Pickup Point Management', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           SizedBox(height: 8),

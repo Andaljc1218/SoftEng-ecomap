@@ -9,7 +9,7 @@ class EducationScreen extends StatelessWidget {
         appBar: AppBar(title: const Text('Education')),
         body: const Center(
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(Icons.library_books, size: 64, color: AppTheme.primaryGreen),
+            Icon(Icons.library_books, size: 64, color: EcoColors.primaryGreen),
             SizedBox(height: 16),
             Text('Educational Resources', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             SizedBox(height: 8),

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
 
 class AdminShell extends StatelessWidget {
@@ -14,69 +12,34 @@ class AdminShell extends StatelessWidget {
     if (location == '/admin/users') return 1;
     if (location == '/admin/materials') return 2;
     if (location == '/admin/pickup-points') return 3;
-    if (location == '/admin/map') return 4;
-    if (location == '/admin/profile') return 5;
+    if (location == '/admin/profile') return 4;
     return 0;
   }
 
   @override
   Widget build(BuildContext context) {
     final index = _selectedIndex(context);
-    final auth = context.read<AuthProvider>();
-
     return Scaffold(
       body: child,
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(color: EcoColors.primaryGreen),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  const CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.admin_panel_settings, color: EcoColors.primaryGreen, size: 28),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(auth.currentUser?.name ?? 'Admin',
-                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                  Text(auth.currentUser?.email ?? '',
-                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                ],
-              ),
-            ),
-            _tile(context, Icons.dashboard, 'Dashboard', '/admin/dashboard', index == 0),
-            _tile(context, Icons.people, 'Manage Users', '/admin/users', index == 1),
-            _tile(context, Icons.library_books, 'Manage Materials', '/admin/materials', index == 2),
-            _tile(context, Icons.location_on, 'Pickup Points', '/admin/pickup-points', index == 3),
-            _tile(context, Icons.map, 'Map', '/admin/map', index == 4),
-            _tile(context, Icons.person, 'Profile', '/admin/profile', index == 5),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text('Logout', style: TextStyle(color: Colors.red)),
-              onTap: () => context.read<AuthProvider>().logout(),
-            ),
-          ],
-        ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: index,
+        onDestinationSelected: (i) {
+          switch (i) {
+            case 0: context.go('/admin/dashboard'); break;
+            case 1: context.go('/admin/users'); break;
+            case 2: context.go('/admin/materials'); break;
+            case 3: context.go('/admin/pickup-points'); break;
+            case 4: context.go('/admin/profile'); break;
+          }
+        },
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Dashboard'),
+          NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Users'),
+          NavigationDestination(icon: Icon(Icons.library_books_outlined), selectedIcon: Icon(Icons.library_books), label: 'Materials'),
+          NavigationDestination(icon: Icon(Icons.location_on_outlined), selectedIcon: Icon(Icons.location_on), label: 'Pickup'),
+          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
+        ],
       ),
-    );
-  }
-
-  Widget _tile(BuildContext context, IconData icon, String label, String route, bool selected) {
-    return ListTile(
-      leading: Icon(icon, color: selected ? EcoColors.primaryGreen : null),
-      title: Text(label, style: TextStyle(fontWeight: selected ? FontWeight.bold : FontWeight.normal)),
-      selected: selected,
-      selectedTileColor: EcoColors.backgroundGreen,
-      onTap: () {
-        Navigator.pop(context);
-        context.go(route);
-      },
     );
   }
 }

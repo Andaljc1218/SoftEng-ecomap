@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "125527172839",
+    "project_id": "ecomap-322a4",
+    "storage_bucket": "ecomap-322a4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:125527172839:android:2a38ec6927d4db8399a442",
+        "android_client_info": {
+          "package_name": "com.example.ecomap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCydGHHXUGCrORYF_isYkPMywdwHp4SzTY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

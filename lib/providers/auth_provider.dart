@@ -1,49 +1,56 @@
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
+import '../services/auth_service.dart';
 
 class AuthProvider extends ChangeNotifier {
+  final AuthService _service = AuthService();
+
   UserModel? _currentUser;
   bool _isLoading = false;
+  String? _errorMessage;
 
   UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _currentUser != null;
   UserRole? get role => _currentUser?.role;
+  String? get errorMessage => _errorMessage;
 
-  // Mock login — replace with Firebase Auth later
-  Future<bool> login(String email, String password) async {
+  // Called on app start — restores session if user was already logged in
+  Future<void> restoreSession() async {
     _isLoading = true;
     notifyListeners();
 
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    // Mock users for testing all three roles
-    if (email == 'admin@ecomap.com') {
-      _currentUser = const UserModel(
-        id: '1',
-        name: 'Admin User',
-        email: 'admin@ecomap.com',
-        role: UserRole.admin,
-      );
-    } else if (email == 'driver@ecomap.com') {
-      _currentUser = const UserModel(
-        id: '2',
-        name: 'Juan dela Cruz',
-        email: 'driver@ecomap.com',
-        role: UserRole.driver,
-      );
-    } else {
-      _currentUser = UserModel(
-        id: '3',
-        name: email.split('@').first,
-        email: email,
-        role: UserRole.community,
-      );
+    final firebaseUser = _service.currentFirebaseUser;
+    if (firebaseUser != null) {
+      _currentUser = await _service.fetchUser(firebaseUser.uid);
     }
 
     _isLoading = false;
     notifyListeners();
-    return true;
+  }
+
+  Future<bool> login(String email, String password) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _currentUser = await _service.login(email, password);
+      if (_currentUser == null) {
+        _errorMessage = 'User data not found. Contact support.';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on Exception catch (e) {
+      _errorMessage = _friendlyError(e.toString());
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
   }
 
   Future<bool> register({
@@ -53,24 +60,69 @@ class AuthProvider extends ChangeNotifier {
     required UserRole role,
   }) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    _currentUser = UserModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: name,
-      email: email,
-      role: role,
-    );
-
-    _isLoading = false;
-    notifyListeners();
-    return true;
+    try {
+      _currentUser = await _service.register(
+        name: name,
+        email: email,
+        password: password,
+        role: role,
+      );
+      if (_currentUser == null) {
+        _errorMessage = 'Registration failed. Try again.';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on Exception catch (e) {
+      _errorMessage = _friendlyError(e.toString());
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
   }
 
-  void logout() {
+  Future<bool> sendPasswordReset(String email) async {
+    try {
+      await _service.sendPasswordReset(email);
+      return true;
+    } on Exception {
+      return false;
+    }
+  }
+
+  Future<void> logout() async {
+    await _service.logout();
     _currentUser = null;
     notifyListeners();
+  }
+
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
+
+  String _friendlyError(String raw) {
+    if (raw.contains('user-not-found') || raw.contains('wrong-password') || raw.contains('invalid-credential')) {
+      return 'Invalid email or password.';
+    }
+    if (raw.contains('email-already-in-use')) {
+      return 'This email is already registered.';
+    }
+    if (raw.contains('weak-password')) {
+      return 'Password is too weak. Use at least 6 characters.';
+    }
+    if (raw.contains('invalid-email')) {
+      return 'Please enter a valid email address.';
+    }
+    if (raw.contains('network-request-failed')) {
+      return 'No internet connection. Please try again.';
+    }
+    return 'Something went wrong. Please try again.';
   }
 }

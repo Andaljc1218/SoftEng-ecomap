@@ -9,7 +9,6 @@ class AuthService {
   User? get currentFirebaseUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // Returns the collection name based on role
   String _collectionForRole(UserRole role) {
     switch (role) {
       case UserRole.admin: return 'admins';
@@ -18,7 +17,6 @@ class AuthService {
     }
   }
 
-  // Fetch user by checking all 3 collections
   Future<UserModel?> fetchUser(String uid) async {
     for (final collection in ['admins', 'drivers', 'community_users']) {
       try {
@@ -61,7 +59,6 @@ class AuthService {
       role: safeRole,
     );
 
-    // Save to the correct collection
     await _db
         .collection(_collectionForRole(safeRole))
         .doc(cred.user!.uid)
@@ -71,8 +68,53 @@ class AuthService {
     return user;
   }
 
+  Future<void> updateName(String uid, String name, UserRole role) async {
+    final collection = _collectionForRole(role);
+    await _db.collection(collection).doc(uid).update({'name': name});
+    await _auth.currentUser?.updateDisplayName(name);
+  }
+
+  Future<void> changePassword({
+    required String email,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final cred = EmailAuthProvider.credential(
+      email: email,
+      password: currentPassword,
+    );
+    await user.reauthenticateWithCredential(cred);
+    await user.updatePassword(newPassword);
+  }
+
   Future<void> sendPasswordReset(String email) async {
     await _auth.sendPasswordResetEmail(email: email);
+  }
+
+  Future<void> deleteAccount({
+    required String uid,
+    required UserRole role,
+    required String email,
+    required String password,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    // Reauthenticate first
+    final cred = EmailAuthProvider.credential(
+      email: email,
+      password: password,
+    );
+    await user.reauthenticateWithCredential(cred);
+
+    // Delete from Firestore
+    await _db.collection(_collectionForRole(role)).doc(uid).delete();
+
+    // Delete from Firebase Auth
+    await user.delete();
   }
 
   Future<void> logout() async {

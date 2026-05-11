@@ -15,7 +15,6 @@ class AuthProvider extends ChangeNotifier {
   UserRole? get role => _currentUser?.role;
   String? get errorMessage => _errorMessage;
 
-  // Called on app start — restores session if user was already logged in
   Future<void> restoreSession() async {
     _isLoading = true;
     notifyListeners();
@@ -87,11 +86,88 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> updateName(String name) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _service.updateName(
+        _currentUser!.id,
+        name,
+        _currentUser!.role,
+      );
+      _currentUser = UserModel(
+        id: _currentUser!.id,
+        name: name,
+        email: _currentUser!.email,
+        role: _currentUser!.role,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on Exception catch (e) {
+      _errorMessage = _friendlyError(e.toString());
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _service.changePassword(
+        email: _currentUser!.email,
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on Exception catch (e) {
+      _errorMessage = _friendlyError(e.toString());
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> sendPasswordReset(String email) async {
     try {
       await _service.sendPasswordReset(email);
       return true;
     } on Exception {
+      return false;
+    }
+  }
+
+  Future<bool> deleteAccount(String password) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _service.deleteAccount(
+        uid: _currentUser!.id,
+        role: _currentUser!.role,
+        email: _currentUser!.email,
+        password: password,
+      );
+      _currentUser = null;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on Exception catch (e) {
+      _errorMessage = _friendlyError(e.toString());
+      _isLoading = false;
+      notifyListeners();
       return false;
     }
   }

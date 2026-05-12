@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../models/education_article.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -34,8 +36,7 @@ class ManageMaterialsScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.library_books,
-                      size: 56, color: Colors.grey),
+                  const Icon(Icons.library_books, size: 56, color: Colors.grey),
                   const SizedBox(height: 16),
                   const Text('No articles yet.',
                       style: TextStyle(fontWeight: FontWeight.bold)),
@@ -73,17 +74,27 @@ class ManageMaterialsScreen extends StatelessWidget {
                       color: color.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(_categoryIcon(article.category),
-                        color: color),
+                    child: Icon(_categoryIcon(article.category), color: color),
                   ),
                   title: Text(article.title,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
-                  subtitle: Text(
-                    '${article.category} • ${article.createdAt.day}/${article.createdAt.month}/${article.createdAt.year}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
+                  subtitle: Row(children: [
+                    Text(
+                      '${article.category} • ${article.createdAt.day}/${article.createdAt.month}/${article.createdAt.year}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    if (article.hasFile) ...[
+                      const SizedBox(width: 6),
+                      Icon(_fileIcon(article.fileType),
+                          size: 13, color: Colors.grey),
+                      const SizedBox(width: 2),
+                      Text(article.fileType.toUpperCase(),
+                          style: const TextStyle(
+                              fontSize: 10, color: Colors.grey)),
+                    ],
+                  ]),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -95,8 +106,7 @@ class ManageMaterialsScreen extends StatelessWidget {
                       IconButton(
                         icon: const Icon(Icons.delete_outline,
                             color: Colors.red),
-                        onPressed: () =>
-                            _deleteArticle(context, article.id, article.title),
+                        onPressed: () => _deleteArticle(context, article),
                       ),
                     ],
                   ),
@@ -127,13 +137,23 @@ class ManageMaterialsScreen extends StatelessWidget {
     }
   }
 
+  IconData _fileIcon(String type) {
+    switch (type.toLowerCase()) {
+      case 'pdf': return Icons.picture_as_pdf;
+      case 'doc': case 'docx': return Icons.description;
+      case 'ppt': case 'pptx': return Icons.slideshow;
+      default: return Icons.attach_file;
+    }
+  }
+
   Future<void> _deleteArticle(
-      BuildContext context, String id, String title) async {
+      BuildContext context, EducationArticle article) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Article'),
-        content: Text('Remove "$title"?'),
+        content: Text('Remove "${article.title}"?'
+            '${article.hasFile ? '\n\nThe attached file will also be deleted from storage.' : ''}'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -149,9 +169,14 @@ class ManageMaterialsScreen extends StatelessWidget {
     );
 
     if (confirmed == true) {
+      if (article.hasFile) {
+        try {
+          await FirebaseStorage.instance.refFromURL(article.fileUrl).delete();
+        } catch (_) {}
+      }
       await FirebaseFirestore.instance
           .collection('education_articles')
-          .doc(id)
+          .doc(article.id)
           .delete();
     }
   }
@@ -168,6 +193,9 @@ class ManageMaterialsScreen extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────
+// Article form with file upload
+// ─────────────────────────────────────────────
 class _ArticleForm extends StatefulWidget {
   final EducationArticle? existing;
   const _ArticleForm({this.existing});
@@ -182,7 +210,15 @@ class _ArticleFormState extends State<_ArticleForm> {
   late final TextEditingController _summaryCtrl;
   late final TextEditingController _contentCtrl;
   late String _category;
+
+  PlatformFile? _pickedFile;
+  String? _existingFileUrl;
+  String? _existingFileName;
+  String? _existingFileType;
+  bool _removeExistingFile = false;
+
   bool _saving = false;
+  double _uploadProgress = 0;
 
   final List<String> _categories = [
     'General', 'Recycling', 'Composting', 'Waste Reduction'
@@ -196,6 +232,10 @@ class _ArticleFormState extends State<_ArticleForm> {
     _summaryCtrl = TextEditingController(text: e?.summary ?? '');
     _contentCtrl = TextEditingController(text: e?.content ?? '');
     _category = e?.category ?? 'General';
+    _existingFileUrl =
+        (e?.fileUrl.isNotEmpty == true) ? e!.fileUrl : null;
+    _existingFileName = e?.fileName;
+    _existingFileType = e?.fileType;
   }
 
   @override
@@ -206,40 +246,121 @@ class _ArticleFormState extends State<_ArticleForm> {
     super.dispose();
   }
 
+  Future<void> _pickFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'jpg', 'jpeg', 'png'],
+      withData: true,
+    );
+    if (result != null && result.files.isNotEmpty) {
+      setState(() {
+        _pickedFile = result.files.first;
+        _removeExistingFile = true;
+      });
+    }
+  }
+
+  String _extOf(String name) {
+    final parts = name.split('.');
+    return parts.length > 1 ? parts.last.toLowerCase() : '';
+  }
+
+  String _contentTypeOf(String ext) {
+    switch (ext) {
+      case 'pdf': return 'application/pdf';
+      case 'doc': return 'application/msword';
+      case 'docx':
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      case 'ppt': return 'application/vnd.ms-powerpoint';
+      case 'pptx':
+        return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+      case 'jpg': case 'jpeg': return 'image/jpeg';
+      case 'png': return 'image/png';
+      default: return 'application/octet-stream';
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _saving = true);
+    setState(() { _saving = true; _uploadProgress = 0; });
 
-    final data = {
-      'title': _titleCtrl.text.trim(),
-      'summary': _summaryCtrl.text.trim(),
-      'content': _contentCtrl.text.trim(),
-      'category': _category,
-      'imageUrl': '',
-      'createdAt': widget.existing?.createdAt != null
-          ? Timestamp.fromDate(widget.existing!.createdAt)
-          : Timestamp.now(),
-    };
+    String fileUrl = _existingFileUrl ?? '';
+    String fileName = _existingFileName ?? '';
+    String fileType = _existingFileType ?? '';
 
-    final col =
-        FirebaseFirestore.instance.collection('education_articles');
-    if (widget.existing != null) {
-      await col.doc(widget.existing!.id).update(data);
-    } else {
-      await col.add(data);
+    try {
+      // Delete old file if being replaced
+      if (_removeExistingFile && _existingFileUrl != null) {
+        try {
+          await FirebaseStorage.instance.refFromURL(_existingFileUrl!).delete();
+        } catch (_) {}
+        fileUrl = ''; fileName = ''; fileType = '';
+      }
+
+      // Upload new file
+      if (_pickedFile != null && _pickedFile!.bytes != null) {
+        final ext = _extOf(_pickedFile!.name);
+        final path =
+            'education_files/${DateTime.now().millisecondsSinceEpoch}_${_pickedFile!.name}';
+        final ref = FirebaseStorage.instance.ref(path);
+        final task = ref.putData(
+          _pickedFile!.bytes!,
+          SettableMetadata(contentType: _contentTypeOf(ext)),
+        );
+
+        task.snapshotEvents.listen((snap) {
+          final p = snap.bytesTransferred /
+              (snap.totalBytes == 0 ? 1 : snap.totalBytes);
+          if (mounted) setState(() => _uploadProgress = p);
+        });
+
+        await task;
+        fileUrl = await ref.getDownloadURL();
+        fileName = _pickedFile!.name;
+        fileType = ext;
+      }
+
+      final data = {
+        'title': _titleCtrl.text.trim(),
+        'summary': _summaryCtrl.text.trim(),
+        'content': _contentCtrl.text.trim(),
+        'category': _category,
+        'imageUrl': '',
+        'fileUrl': fileUrl,
+        'fileName': fileName,
+        'fileType': fileType,
+        'createdAt': widget.existing?.createdAt != null
+            ? Timestamp.fromDate(widget.existing!.createdAt)
+            : Timestamp.now(),
+      };
+
+      final col = FirebaseFirestore.instance.collection('education_articles');
+      if (widget.existing != null) {
+        await col.doc(widget.existing!.id).update(data);
+      } else {
+        await col.add(data);
+      }
+
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ));
+        setState(() => _saving = false);
+      }
     }
-
-    if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.existing != null;
+    final hasExistingFile = _existingFileUrl != null && !_removeExistingFile;
+
     return Padding(
       padding: EdgeInsets.only(
-        left: 24,
-        right: 24,
-        top: 24,
+        left: 24, right: 24, top: 24,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
       child: Form(
@@ -250,11 +371,9 @@ class _ArticleFormState extends State<_ArticleForm> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(isEdit ? 'Edit Article' : 'New Article',
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
 
-              // Category dropdown
               DropdownButtonFormField<String>(
                 value: _category,
                 decoration: const InputDecoration(
@@ -274,8 +393,7 @@ class _ArticleFormState extends State<_ArticleForm> {
                   labelText: 'Title *',
                   prefixIcon: Icon(Icons.title),
                 ),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Required' : null,
+                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 12),
 
@@ -285,25 +403,80 @@ class _ArticleFormState extends State<_ArticleForm> {
                 decoration: const InputDecoration(
                   labelText: 'Summary *',
                   prefixIcon: Icon(Icons.short_text),
-                  hintText: 'Short description shown in card view',
+                  hintText: 'Short description shown in the card',
                 ),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Required' : null,
+                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 12),
 
               TextFormField(
                 controller: _contentCtrl,
-                maxLines: 6,
+                maxLines: 5,
                 decoration: const InputDecoration(
-                  labelText: 'Content *',
+                  labelText: 'Content',
                   prefixIcon: Icon(Icons.article_outlined),
-                  hintText: 'Full article content...',
+                  hintText: 'Article body (optional if file attached)',
                   alignLabelWithHint: true,
                 ),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Required' : null,
               ),
+              const SizedBox(height: 20),
+
+              // ── File section ──
+              const Text('Attachment',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              const SizedBox(height: 8),
+
+              if (hasExistingFile)
+                _FileChip(
+                  name: _existingFileName ?? 'Attached file',
+                  type: _existingFileType ?? '',
+                  color: EcoColors.backgroundGreen,
+                  borderColor: EcoColors.accentGreen,
+                  iconColor: EcoColors.primaryGreen,
+                  onRemove: () => setState(() => _removeExistingFile = true),
+                ),
+
+              if (_pickedFile != null)
+                _FileChip(
+                  name: _pickedFile!.name,
+                  type: _extOf(_pickedFile!.name),
+                  color: Colors.blue.withValues(alpha: 0.08),
+                  borderColor: Colors.blue.shade200,
+                  iconColor: Colors.blue,
+                  subtitle:
+                      '${(_pickedFile!.size / 1024).toStringAsFixed(1)} KB',
+                  onRemove: () => setState(() {
+                    _pickedFile = null;
+                    if (widget.existing?.fileUrl.isNotEmpty == true) {
+                      _removeExistingFile = false;
+                    }
+                  }),
+                ),
+
+              if (_saving && _uploadProgress > 0 && _uploadProgress < 1) ...[
+                const SizedBox(height: 8),
+                LinearProgressIndicator(value: _uploadProgress),
+                const SizedBox(height: 4),
+                Text(
+                  'Uploading ${(_uploadProgress * 100).toStringAsFixed(0)}%',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+
+              if (_pickedFile == null) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.attach_file),
+                  label: Text(hasExistingFile
+                      ? 'Replace File'
+                      : 'Attach File  (PDF, DOC, PPT, Image)'),
+                  onPressed: _saving ? null : _pickFile,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                ),
+              ],
+
               const SizedBox(height: 20),
 
               SizedBox(
@@ -311,16 +484,13 @@ class _ArticleFormState extends State<_ArticleForm> {
                 child: ElevatedButton.icon(
                   icon: _saving
                       ? const SizedBox(
-                          height: 18,
-                          width: 18,
+                          height: 18, width: 18,
                           child: CircularProgressIndicator(
                               color: Colors.white, strokeWidth: 2))
                       : Icon(isEdit ? Icons.save_outlined : Icons.add),
                   label: Text(_saving
-                      ? 'Saving...'
-                      : isEdit
-                          ? 'Save Changes'
-                          : 'Publish Article'),
+                      ? (_uploadProgress > 0 ? 'Uploading...' : 'Saving...')
+                      : isEdit ? 'Save Changes' : 'Publish Article'),
                   onPressed: _saving ? null : _save,
                 ),
               ),
@@ -328,6 +498,67 @@ class _ArticleFormState extends State<_ArticleForm> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _FileChip extends StatelessWidget {
+  final String name, type;
+  final Color color, borderColor, iconColor;
+  final String? subtitle;
+  final VoidCallback onRemove;
+
+  const _FileChip({
+    required this.name,
+    required this.type,
+    required this.color,
+    required this.borderColor,
+    required this.iconColor,
+    this.subtitle,
+    required this.onRemove,
+  });
+
+  IconData get _icon {
+    switch (type.toLowerCase()) {
+      case 'pdf': return Icons.picture_as_pdf;
+      case 'doc': case 'docx': return Icons.description;
+      case 'ppt': case 'pptx': return Icons.slideshow;
+      case 'jpg': case 'jpeg': case 'png': return Icons.image;
+      default: return Icons.attach_file;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(children: [
+        Icon(_icon, color: iconColor),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name,
+                  style: const TextStyle(fontSize: 13),
+                  overflow: TextOverflow.ellipsis),
+              if (subtitle != null)
+                Text(subtitle!,
+                    style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            ],
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.close, color: Colors.red, size: 20),
+          onPressed: onRemove,
+        ),
+      ]),
     );
   }
 }

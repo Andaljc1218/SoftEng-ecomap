@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import '../../models/education_article.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/eco_app_bar.dart';
 
 class EducationScreen extends StatefulWidget {
   const EducationScreen({super.key});
@@ -43,7 +44,10 @@ class _EducationScreenState extends State<EducationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Education')),
+      appBar: const EcoAppBar(
+        title: 'Education',
+        showHomeLeading: true,
+      ),
       body: Column(
         children: [
           // Category filter chips
@@ -276,7 +280,9 @@ class _ArticleDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(article.category)),
+      appBar: EcoAppBar(
+        title: article.category,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -449,9 +455,8 @@ class _PdfViewerScreenState extends State<_PdfViewerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title,
-            maxLines: 1, overflow: TextOverflow.ellipsis),
+      appBar: EcoAppBar(
+        title: widget.title,
         actions: [
           if (_ready)
             Padding(

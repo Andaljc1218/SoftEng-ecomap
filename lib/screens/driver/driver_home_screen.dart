@@ -5,16 +5,26 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/schedule_model.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/eco_app_bar.dart';
 
 class DriverHomeScreen extends StatelessWidget {
   const DriverHomeScreen({super.key});
 
+  String _scheduleTitle(PickupSchedule s) {
+    if (s.pickupPointName.isNotEmpty) return s.pickupPointName;
+    return 'Brgy. ${s.barangay}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().currentUser;
+    final driverId = user?.id;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Driver Dashboard')),
+      appBar: const EcoAppBar(
+        title: 'Driver Dashboard',
+        automaticallyImplyLeading: false,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -51,7 +61,7 @@ class DriverHomeScreen extends StatelessWidget {
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.add),
                 label: const Text('Add New Schedule'),
-                onPressed: () => context.go('/driver/add-schedule'),
+                onPressed: () => context.push('/driver/add-schedule'),
               ),
             ),
             const SizedBox(height: 20),
@@ -60,17 +70,38 @@ class DriverHomeScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
 
-            // Live schedule list from Firestore
+            // Live schedule list (no orderBy — avoids composite index issues)
             Expanded(
-              child: StreamBuilder<QuerySnapshot>(
+              child: driverId == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('schedules')
-                    .where('driverId', isEqualTo: user?.id)
-                    .orderBy('barangay')
+                    .where('driverId', isEqualTo: driverId)
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.error_outline,
+                                size: 48, color: Colors.red),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Could not load schedules.\n${snapshot.error}',
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
                   }
 
                   final docs = snapshot.data?.docs ?? [];
@@ -96,7 +127,16 @@ class DriverHomeScreen extends StatelessWidget {
                   final schedules = docs
                       .map((d) => PickupSchedule.fromMap(
                           d.id, d.data() as Map<String, dynamic>))
-                      .toList();
+                      .toList()
+                    ..sort((a, b) {
+                      final byBarangay = a.barangay
+                          .toLowerCase()
+                          .compareTo(b.barangay.toLowerCase());
+                      if (byBarangay != 0) return byBarangay;
+                      return a.pickupPointName
+                          .toLowerCase()
+                          .compareTo(b.pickupPointName.toLowerCase());
+                    });
 
                   return ListView.separated(
                     itemCount: schedules.length,
@@ -111,19 +151,32 @@ class DriverHomeScreen extends StatelessWidget {
                               color: EcoColors.backgroundGreen,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.delete_outline,
+                            child: const Icon(Icons.event_note,
                                 color: EcoColors.primaryGreen),
                           ),
-                          title: Text('Brgy. ${s.barangay}',
+                          title: Text(_scheduleTitle(s),
                               style: const TextStyle(
                                   fontWeight: FontWeight.bold)),
                           subtitle: Text(
                               '${s.daysLabel} • ${s.time} • ${s.wasteType}',
                               style: const TextStyle(fontSize: 12)),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline,
-                                color: Colors.red),
-                            onPressed: () => _confirmDelete(context, s),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit_outlined,
+                                    color: EcoColors.primaryGreen),
+                                tooltip: 'Edit',
+                                onPressed: () => context.push(
+                                    '/driver/add-schedule?id=${s.id}'),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline,
+                                    color: Colors.red),
+                                tooltip: 'Delete',
+                                onPressed: () => _confirmDelete(context, s),
+                              ),
+                            ],
                           ),
                         ),
                       );
@@ -140,12 +193,14 @@ class DriverHomeScreen extends StatelessWidget {
 
   Future<void> _confirmDelete(
       BuildContext context, PickupSchedule schedule) async {
+    final title = schedule.pickupPointName.isNotEmpty
+        ? schedule.pickupPointName
+        : 'Brgy. ${schedule.barangay}';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Schedule'),
-        content: Text(
-            'Remove the schedule for Brgy. ${schedule.barangay}?'),
+        content: Text('Remove the schedule for "$title"?'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),

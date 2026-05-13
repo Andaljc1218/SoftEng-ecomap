@@ -4,6 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../models/education_article.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/eco_app_bar.dart';
 
 class ManageMaterialsScreen extends StatelessWidget {
   const ManageMaterialsScreen({super.key});
@@ -11,7 +12,11 @@ class ManageMaterialsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Manage Materials')),
+      appBar: const EcoAppBar(
+        title: 'Manage Materials',
+        showHomeLeading: true,
+        homeLocation: '/admin/dashboard',
+      ),
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.add),
         label: const Text('Add Article'),

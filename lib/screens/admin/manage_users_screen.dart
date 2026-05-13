@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/user_model.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/eco_app_bar.dart';
 
 class ManageUsersScreen extends StatefulWidget {
   const ManageUsersScreen({super.key});
@@ -145,8 +146,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Manage Users'),
+      appBar: EcoAppBar(
+        title: 'Manage Users',
+        showHomeLeading: true,
+        homeLocation: '/admin/dashboard',
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.white,

@@ -8,6 +8,7 @@ import '../../screens/community/map_screen.dart';
 import '../../screens/community/schedule_screen.dart';
 import '../../screens/community/education_screen.dart';
 import '../../screens/community/profile_screen.dart';
+import '../../screens/community/notifications_screen.dart';
 import '../../screens/driver/driver_home_screen.dart';
 import '../../screens/driver/add_schedule_screen.dart';
 import '../../screens/admin/dashboard_screen.dart';
@@ -53,7 +54,13 @@ GoRouter createRouter(AuthProvider auth) {
         builder: (_, __, child) => DriverShell(child: child),
         routes: [
           GoRoute(path: '/driver/home', builder: (_, __) => const DriverHomeScreen()),
-          GoRoute(path: '/driver/add-schedule', builder: (_, __) => const AddScheduleScreen()),
+          GoRoute(
+            path: '/driver/add-schedule',
+            builder: (context, state) {
+              final editId = state.uri.queryParameters['id'];
+              return AddScheduleScreen(editScheduleId: editId);
+            },
+          ),
           GoRoute(path: '/driver/map', builder: (_, __) => const MapScreen()),
           GoRoute(path: '/driver/profile', builder: (_, __) => const ProfileScreen()),
         ],
@@ -68,6 +75,10 @@ GoRouter createRouter(AuthProvider auth) {
           GoRoute(path: '/admin/map', builder: (_, __) => const MapScreen()),
           GoRoute(path: '/admin/profile', builder: (_, __) => const ProfileScreen()),
         ],
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (_, __) => const NotificationsScreen(),
       ),
     ],
   );

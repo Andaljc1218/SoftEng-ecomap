@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'providers/auth_provider.dart';
+import 'providers/community_notifications_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,8 +21,14 @@ class EcoMapApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AuthProvider()..restoreSession(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()..restoreSession()),
+        ChangeNotifierProvider(
+          create: (c) =>
+              CommunityNotificationsProvider(c.read<AuthProvider>()),
+        ),
+      ],
       child: const _RouterWrapper(),
     );
   }

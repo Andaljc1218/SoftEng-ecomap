@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_theme.dart';
+
 class DriverShell extends StatelessWidget {
   final Widget child;
   const DriverShell({super.key, required this.child});
@@ -18,22 +20,45 @@ class DriverShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final index = _selectedIndex(context);
     return Scaffold(
-      body: child,
+      body: DecoratedBox(
+        decoration: const BoxDecoration(gradient: EcoGradients.driverShellBody),
+        child: child,
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
         onDestinationSelected: (i) {
           switch (i) {
-            case 0: context.go('/driver/home'); break;
-            case 1: context.go('/driver/add-schedule'); break;
-            case 2: context.go('/driver/map'); break;
-            case 3: context.go('/driver/profile'); break;
+            case 0:
+              context.go('/driver/home');
+              break;
+            case 1:
+              context.go('/driver/add-schedule');
+              break;
+            case 2:
+              context.go('/driver/map');
+              break;
+            case 3:
+              context.go('/driver/profile');
+              break;
           }
         },
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.add_circle_outline), selectedIcon: Icon(Icons.add_circle), label: 'Add Schedule'),
-          NavigationDestination(icon: Icon(Icons.map_outlined), selectedIcon: Icon(Icons.map), label: 'Map'),
-          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
+          NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home_rounded),
+              label: 'Home'),
+          NavigationDestination(
+              icon: Icon(Icons.add_circle_outline),
+              selectedIcon: Icon(Icons.add_circle_rounded),
+              label: 'Add'),
+          NavigationDestination(
+              icon: Icon(Icons.map_outlined),
+              selectedIcon: Icon(Icons.map_rounded),
+              label: 'Map'),
+          NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person_rounded),
+              label: 'Profile'),
         ],
       ),
     );

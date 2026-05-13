@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../models/pickup_point.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/eco_app_bar.dart';
 
 class ManagePickupPointsScreen extends StatelessWidget {
   const ManagePickupPointsScreen({super.key});
@@ -11,7 +12,11 @@ class ManagePickupPointsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Manage Pickup Points')),
+      appBar: const EcoAppBar(
+        title: 'Manage Pickup Points',
+        showHomeLeading: true,
+        homeLocation: '/admin/dashboard',
+      ),
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.add_location_alt_outlined),
         label: const Text('Add Point'),
@@ -79,7 +84,7 @@ class ManagePickupPointsScreen extends StatelessWidget {
                   title: Text(p.name,
                       style: const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text(
-                    'Brgy. ${p.barangay}\n${p.schedule} • ${p.time}',
+                    'Brgy. ${p.barangay}\n${p.displaySchedule} • ${p.time}',
                     style: const TextStyle(fontSize: 12),
                   ),
                   isThreeLine: true,
@@ -167,8 +172,10 @@ class _PickupPointFormScreenState extends State<_PickupPointFormScreen> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _barangayCtrl;
   late final TextEditingController _addressCtrl;
-  late final TextEditingController _scheduleCtrl;
   late final TextEditingController _timeCtrl;
+
+  final List<String> _allDays = PickupPoint.weekdayOrder;
+  final List<String> _selectedDays = [];
 
   static const LatLng _defaultCenter = LatLng(13.7565, 121.0583);
 
@@ -183,8 +190,10 @@ class _PickupPointFormScreenState extends State<_PickupPointFormScreen> {
     _nameCtrl = TextEditingController(text: e?.name ?? '');
     _barangayCtrl = TextEditingController(text: e?.barangay ?? '');
     _addressCtrl = TextEditingController(text: e?.address ?? '');
-    _scheduleCtrl = TextEditingController(text: e?.schedule ?? '');
     _timeCtrl = TextEditingController(text: e?.time ?? '');
+    if (e != null && e.days.isNotEmpty) {
+      _selectedDays.addAll(e.days);
+    }
 
     if (e != null) {
       _markerPosition = LatLng(e.lat, e.lng);
@@ -197,9 +206,18 @@ class _PickupPointFormScreenState extends State<_PickupPointFormScreen> {
     _nameCtrl.dispose();
     _barangayCtrl.dispose();
     _addressCtrl.dispose();
-    _scheduleCtrl.dispose();
     _timeCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (picked != null && mounted) {
+      setState(() => _timeCtrl.text = picked.format(context));
+    }
   }
 
   Future<void> _save() async {
@@ -213,16 +231,37 @@ class _PickupPointFormScreenState extends State<_PickupPointFormScreen> {
       );
       return;
     }
+    if (_selectedDays.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Select at least one pickup day.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    if (_timeCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Select a pickup time.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     setState(() => _saving = true);
 
+    final scheduleAbbrev =
+        PickupPoint.abbrevScheduleFromDays(_selectedDays);
     final data = {
       'name': _nameCtrl.text.trim(),
       'barangay': _barangayCtrl.text.trim(),
       'address': _addressCtrl.text.trim(),
       'lat': _markerPosition!.latitude,
       'lng': _markerPosition!.longitude,
-      'schedule': _scheduleCtrl.text.trim(),
+      'days': List<String>.from(_selectedDays),
+      'schedule': scheduleAbbrev,
       'time': _timeCtrl.text.trim(),
     };
 
@@ -230,7 +269,10 @@ class _PickupPointFormScreenState extends State<_PickupPointFormScreen> {
     if (widget.existing != null) {
       await col.doc(widget.existing!.id).update(data);
     } else {
-      await col.add(data);
+      await col.add({
+        ...data,
+        'createdAt': Timestamp.fromDate(DateTime.now()),
+      });
     }
 
     if (mounted) Navigator.pop(context);
@@ -241,8 +283,8 @@ class _PickupPointFormScreenState extends State<_PickupPointFormScreen> {
     final isEdit = widget.existing != null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isEdit ? 'Edit Pickup Point' : 'Add Pickup Point'),
+      appBar: EcoAppBar(
+        title: isEdit ? 'Edit Pickup Point' : 'Add Pickup Point',
         actions: [
           TextButton(
             onPressed: _saving ? null : _save,
@@ -432,24 +474,51 @@ class _PickupPointFormScreenState extends State<_PickupPointFormScreen> {
                         hintText: 'e.g. Near the basketball court',
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _scheduleCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Schedule *',
-                        prefixIcon: Icon(Icons.calendar_today_outlined),
-                        hintText: 'e.g. Mon, Wed, Fri',
-                      ),
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Required' : null,
+                    const SizedBox(height: 16),
+                    const Text('Pickup schedule (defaults for drivers)',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 8),
+                    const Text('Default pickup days *',
+                        style: TextStyle(
+                            fontSize: 13, color: Colors.grey)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: _allDays.map((day) {
+                        final selected = _selectedDays.contains(day);
+                        return FilterChip(
+                          label: Text(day.substring(0, 3)),
+                          selected: selected,
+                          onSelected: (val) {
+                            setState(() {
+                              if (val) {
+                                _selectedDays.add(day);
+                              } else {
+                                _selectedDays.remove(day);
+                              }
+                            });
+                          },
+                          selectedColor: EcoColors.primaryGreen,
+                          labelStyle: TextStyle(
+                            color: selected ? Colors.white : null,
+                            fontWeight:
+                                selected ? FontWeight.w600 : null,
+                          ),
+                          checkmarkColor: Colors.white,
+                        );
+                      }).toList(),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _timeCtrl,
+                      readOnly: true,
+                      onTap: _pickTime,
                       decoration: const InputDecoration(
-                        labelText: 'Pickup Time *',
+                        labelText: 'Default pickup time *',
                         prefixIcon: Icon(Icons.access_time_outlined),
-                        hintText: 'e.g. 6:00 AM',
+                        hintText: 'Tap to select time',
                       ),
                       validator: (v) =>
                           v == null || v.isEmpty ? 'Required' : null,

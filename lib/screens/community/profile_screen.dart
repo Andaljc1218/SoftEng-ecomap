@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../models/user_model.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/eco_app_bar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -122,11 +124,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthProvider>().currentUser;
     final auth = context.watch<AuthProvider>();
+    final user = auth.currentUser;
+    final shellHome = switch (auth.role) {
+      UserRole.admin => '/admin/dashboard',
+      UserRole.driver => '/driver/home',
+      null || UserRole.community => '/home',
+    };
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: EcoAppBar(
+        title: 'Profile',
+        showHomeLeading: true,
+        homeLocation: shellHome,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

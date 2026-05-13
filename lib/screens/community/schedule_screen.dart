@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/schedule_model.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/eco_app_bar.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -53,7 +54,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Pickup Schedule')),
+      appBar: const EcoAppBar(
+        title: 'Pickup Schedule',
+        showHomeLeading: true,
+      ),
       body: Column(
         children: [
           // Search bar
@@ -110,12 +114,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             ),
           ),
 
-          // Schedule list from Firestore
+          // Schedule list from Firestore (no server orderBy so every doc is included)
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('schedules')
-                  .orderBy('barangay')
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -142,6 +145,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     .map((d) => PickupSchedule.fromMap(
                         d.id, d.data() as Map<String, dynamic>))
                     .toList();
+                schedules.sort((a, b) {
+                  final byBarangay =
+                      a.barangay.toLowerCase().compareTo(b.barangay.toLowerCase());
+                  if (byBarangay != 0) return byBarangay;
+                  return a.pickupPointName
+                      .toLowerCase()
+                      .compareTo(b.pickupPointName.toLowerCase());
+                });
 
                 // Apply filters
                 if (_selectedFilter != 'All') {
@@ -153,7 +164,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   schedules = schedules
                       .where((s) =>
                           s.barangay.toLowerCase().contains(_searchQuery) ||
-                          s.address.toLowerCase().contains(_searchQuery))
+                          s.address.toLowerCase().contains(_searchQuery) ||
+                          s.pickupPointName
+                              .toLowerCase()
+                              .contains(_searchQuery) ||
+                          s.driverName
+                              .toLowerCase()
+                              .contains(_searchQuery))
                       .toList();
                 }
 
@@ -236,6 +253,17 @@ class _ScheduleCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (schedule.pickupPointName.isNotEmpty) ...[
+                    Text(
+                      schedule.pickupPointName,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: EcoColors.primaryGreen,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                  ],
                   Row(
                     children: [
                       Expanded(

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/eco_app_bar.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -21,8 +22,9 @@ class AdminDashboardScreen extends StatelessWidget {
     final user = context.watch<AuthProvider>().currentUser;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('EcoMap Admin'),
+      appBar: EcoAppBar(
+        title: 'EcoMap Admin',
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
               icon: const Icon(Icons.notifications_outlined),

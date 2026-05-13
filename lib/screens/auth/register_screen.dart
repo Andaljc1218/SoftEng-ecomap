@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/user_model.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/eco_app_bar.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -43,9 +44,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final auth = context.watch<AuthProvider>();
     return Scaffold(
       backgroundColor: EcoColors.backgroundGreen,
-      appBar: AppBar(
-        title: const Text('Create Account'),
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => context.go('/login')),
+      appBar: EcoAppBar(
+        title: 'Create Account',
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          tooltip: 'Back to sign in',
+          onPressed: () => context.go('/login'),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(

@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import '../../models/pickup_point.dart';
+import '../../models/user_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/eco_app_bar.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -83,7 +87,7 @@ class _MapScreenState extends State<MapScreen> {
             const SizedBox(height: 8),
             _InfoRow(Icons.home_outlined, 'Address', point.address),
             const SizedBox(height: 8),
-            _InfoRow(Icons.calendar_today_outlined, 'Schedule', point.schedule),
+            _InfoRow(Icons.calendar_today_outlined, 'Schedule', point.displaySchedule),
             const SizedBox(height: 8),
             _InfoRow(Icons.access_time_outlined, 'Time', point.time),
             const SizedBox(height: 20),
@@ -95,9 +99,18 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final shellHome = switch (auth.role) {
+      UserRole.admin => '/admin/dashboard',
+      UserRole.driver => '/driver/home',
+      null || UserRole.community => '/home',
+    };
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pickup Map'),
+      appBar: EcoAppBar(
+        title: 'Pickup Map',
+        showHomeLeading: true,
+        homeLocation: shellHome,
         actions: [
           IconButton(
             icon: const Icon(Icons.my_location),

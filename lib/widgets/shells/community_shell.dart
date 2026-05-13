@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_theme.dart';
+
 class CommunityShell extends StatelessWidget {
   final Widget child;
   const CommunityShell({super.key, required this.child});
@@ -19,24 +21,52 @@ class CommunityShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final index = _selectedIndex(context);
     return Scaffold(
-      body: child,
+      body: DecoratedBox(
+        decoration: const BoxDecoration(gradient: EcoGradients.shellBody),
+        child: child,
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
         onDestinationSelected: (i) {
           switch (i) {
-            case 0: context.go('/home'); break;
-            case 1: context.go('/map'); break;
-            case 2: context.go('/schedule'); break;
-            case 3: context.go('/education'); break;
-            case 4: context.go('/profile'); break;
+            case 0:
+              context.go('/home');
+              break;
+            case 1:
+              context.go('/map');
+              break;
+            case 2:
+              context.go('/schedule');
+              break;
+            case 3:
+              context.go('/education');
+              break;
+            case 4:
+              context.go('/profile');
+              break;
           }
         },
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.map_outlined), selectedIcon: Icon(Icons.map), label: 'Map'),
-          NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Schedule'),
-          NavigationDestination(icon: Icon(Icons.library_books_outlined), selectedIcon: Icon(Icons.library_books), label: 'Education'),
-          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
+          NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home_rounded),
+              label: 'Home'),
+          NavigationDestination(
+              icon: Icon(Icons.map_outlined),
+              selectedIcon: Icon(Icons.map_rounded),
+              label: 'Map'),
+          NavigationDestination(
+              icon: Icon(Icons.calendar_today_outlined),
+              selectedIcon: Icon(Icons.calendar_month_rounded),
+              label: 'Schedule'),
+          NavigationDestination(
+              icon: Icon(Icons.library_books_outlined),
+              selectedIcon: Icon(Icons.menu_book_rounded),
+              label: 'Learn'),
+          NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person_rounded),
+              label: 'Profile'),
         ],
       ),
     );
